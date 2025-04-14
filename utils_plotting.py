@@ -27,6 +27,12 @@ from matplotlib.collections import LineCollection
 class uplt:
     def _init__(self):
         self.version = 241009
+        
+    def plot_arrows(x,y,phase,length, **lc_kwargs):
+        dx = np.sin(phase)*length
+        dy = np.cos(phase)*length
+        for i,tx in enumerate(x):
+            plt.plot([tx,tx+dx[i]],[y[i],y[i]+dy[i]],**lc_kwargs)
     def coloured_line(x, y, c, ax, **lc_kwargs):
         """
         Taken from here: https://matplotlib.org/stable/gallery/lines_bars_and_markers/multicolored_line.html

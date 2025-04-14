@@ -12,6 +12,17 @@ import pandas as pd
 class utils_general():
     def __init__(self):
         self.version = 2401016
+        
+    def circ_subtract(a,b):
+        adiff = a-b
+        sindiff = np.sin(adiff)
+        cosdiff = np.cos(adiff)
+        return np.arctan2(sindiff,cosdiff)
+        
+    def round_to_sig_figs(x, sig_figs):
+        if x == 0:
+            return 0
+        return np.round(x, sig_figs - int(np.floor(np.log10(abs(x)))) - 1)
     def find_blocks(x,mergeblocks=False,merg_threshold = 5):
         x = np.append(x,0)
         x = np.append(0,x)
