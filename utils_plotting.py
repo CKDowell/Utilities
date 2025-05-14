@@ -94,19 +94,20 @@ class uplt:
         lc.set_array(c)  # set the colors of each segment
     
         return ax.add_collection(lc)
-    def coloured_line_simple(x,y,c,cmap,cmin,cmax):
+    def coloured_line_simple(x,y,c,cmap,cmin,cmax,**lc_kwargs):
         import matplotlib as mpl
         from matplotlib import cm
         c_map = plt.get_cmap(cmap)
         cnorm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cm.ScalarMappable(cnorm, c_map)
         c_map_rgb = scalarMap.to_rgba(c)
- 
+        #default_kwargs = {"capstyle": "butt"}
+       # default_kwargs.update(lc_kwargs)
         for i in range(len(c)-1):
             x1 = x[i:i+2]
             y1 = y[i:i+2]
             #ca = np.mean(ca[i:i+2])
-            plt.plot(x1,y1,color=c_map_rgb[i,:])
+            plt.plot(x1,y1,color=c_map_rgb[i,:],**lc_kwargs)
             
         
     def coloured_line_between_pts(x, y, c, ax, **lc_kwargs):

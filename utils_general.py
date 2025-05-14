@@ -7,7 +7,10 @@ Created on Wed Oct 16 15:15:54 2024
 
 import numpy as np
 import pickle
+from scipy import signal as sg
 import pandas as pd
+import src.utilities.funcs as fc
+
 #%%
 class utils_general():
     def __init__(self):
@@ -18,7 +21,12 @@ class utils_general():
         sindiff = np.sin(adiff)
         cosdiff = np.cos(adiff)
         return np.arctan2(sindiff,cosdiff)
+    def savgol_circ(x,winlength,polyorder):
+        xuw = fc.unwrap(x)
         
+        xuws = sg.savgol_filter(xuw,winlength,polyorder)
+        xsmooth = fc.wrap(xuws)
+        return xsmooth
     def round_to_sig_figs(x, sig_figs):
         if x == 0:
             return 0
