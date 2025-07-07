@@ -162,4 +162,20 @@ class uplt:
         lc.set_array(c)
     
         return ax.add_collection(lc)
-
+    
+    
+    def defined_cmap(cmap,num):
+        # Outputs a scale of num rgb colours evenly spaced and defined by the cmap
+        tmap = plt.get_cmap(cmap)
+        
+        #tcolours = np.array(tmap.colors)
+        tcolours = tmap(np.arange(0,256))
+        tnum = np.linspace(0,len(tcolours)-1,num,dtype='int')
+        return tcolours[tnum,:]
+    
+    
+    
+    
+    
+    
+    

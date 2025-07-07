@@ -21,6 +21,14 @@ class utils_general():
         sindiff = np.sin(adiff)
         cosdiff = np.cos(adiff)
         return np.arctan2(sindiff,cosdiff)
+    def circ_vel(x,t,smooth=False,winlength=10,polyorder=3):
+        xuw = fc.unwrap(x)
+        if smooth:
+            xuw = sg.savgol_filter(xuw,winlength,polyorder)
+        
+        dxuw = np.diff(xuw)
+        dt = np.mean(np.diff(t))
+        return dxuw/dt
     def savgol_circ(x,winlength,polyorder):
         xuw = fc.unwrap(x)
         
@@ -126,6 +134,57 @@ class utils_general():
             
             output[i+window] = cor[0,1] 
         return output
+    
+    def fictrac_repair_self(self,x,y):
+        dx = np.abs(np.diff(x))
+        dy = np.abs(np.diff(y))
+        lrgx = dx>5 
+        lrgy = dy>5 
+        bth = np.logical_or(lrgx, lrgy)
+        
+        fixdx =[i+1 for i,b in enumerate(bth) if b]
+        for i,f in enumerate(fixdx):
+            
+            x[f:] =x[f:]- (x[f]-x[f-1])
+            
+            y[f:] = y[f:]- (y[f]-y[f-1])
+        return x, y
+    
+    def get_velocity(self,x,y,t):
+        x,y = self.fictrac_repair_self(x,y)
+        dt = np.mean(np.diff(t))
+        dx = np.diff(x)
+        dy = np.diff(y)
+        d_dist = np.sqrt(dx**2+dy**2)
+        return dx/dt,dy/dt,d_dist/dt
+    
+    def phase_nulling(wedges,phase):
+        pstandard = np.round(8*phase/np.pi).astype('int')
+        rot_wedges = np.zeros_like(wedges)
+        for i,o in enumerate(pstandard):
+            
+            tw = wedges[i,:]
+            rot_wedges[i,:] = np.append(tw[o:],tw[:o])
+        return rot_wedges
+    
+    def get_pvas(wedges):
+        angles = np.linspace(-np.pi,np.pi,wedges.shape[1])
+        weds = np.mean(wedges*np.sin(angles),axis=1)
+        wedc = np.mean(wedges*np.cos(angles),axis=1)
+        pva  = np.sqrt(weds**2+wedc**2)
+        # p0 = np.mean(pva[pva<np.percentile(pva,10)])
+        # pva = (pva-p0)/p0
+
+        # pva_norm - measure of coherence
+
+        # wednorm = wedges
+        # wedmxmn = np.max(wednorm,axis=1)-np.min(wednorm,axis=1)
+        # wednorm = wednorm/np.max(wednorm,axis=1)[:,np.newaxis]
+        
+        # weds = np.mean(wednorm*np.sin(angles),axis=1)
+        # wedc = np.mean(wednorm*np.cos(angles),axis=1)
+        # pva_norm  = np.sqrt(weds**2+wedc**2)
+        return pva
         
         
         
