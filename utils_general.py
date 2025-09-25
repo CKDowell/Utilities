@@ -9,20 +9,49 @@ import numpy as np
 import pickle
 from scipy import signal as sg
 import pandas as pd
-import src.utilities.funcs as fc
+from analysis_funs.utilities import funcs as fn
+
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt 
+import analysis_funs.utilities.funcs as fc
 
 #%%
 class utils_general():
     def __init__(self):
         self.version = 2401016
         
+    def boxcar_sum(data,bins):
+        cv = np.ones(bins)
+        dataout = np.convolve(data,cv,'same')
+        return dataout
+    def dual_gaussianfit(data,bins,plot=False):
+        y,x = np.histogram(data,bins=bins)
+        x = x[1:]-np.mean(np.diff(x))
+        def gauss(x,mu,sigma,A):
+            return A*np.exp(-(x-mu)**2/2/sigma**2)
+        def bimodal(x,mu1,sigma1,A1,mu2,sigma2,A2):
+            return gauss(x,mu1,sigma1,A1)+gauss(x,mu2,sigma2,A2)
+        
+        expected = (1,.2,250,2,.2,125)
+        params,cov= curve_fit(bimodal,x,y,expected)
+        sigma = np.sqrt(np.diag(cov))
+        if plot:
+            plt.plot(x,y,color='k')
+            plt.plot(x,bimodal(x,*params),color='r')
+        return params
     def circ_subtract(a,b):
         adiff = a-b
         sindiff = np.sin(adiff)
         cosdiff = np.cos(adiff)
         return np.arctan2(sindiff,cosdiff)
+    def circ_covariance(x):
+        xi = np.exp(1j*x)
+        xm = np.mean(xi)
+        x_dev = x-xm
+        cov_matrix = (x_dev.conj().T @ x_dev)/x.shape[0]
+        return np.abs(cov_matrix)
     def circ_vel(x,t,smooth=False,winlength=10,polyorder=3):
-        xuw = fc.unwrap(x)
+        xuw = np.unwrap(x)
         if smooth:
             xuw = sg.savgol_filter(xuw,winlength,polyorder)
         
@@ -33,6 +62,14 @@ class utils_general():
         xuw = fc.unwrap(x)
         
         xuws = sg.savgol_filter(xuw,winlength,polyorder)
+        xsmooth = fc.wrap(xuws)
+        return xsmooth
+    def boxcar_circ(x,winlength):
+        xuw = fc.unwrap(x)
+        kernel = np.ones(winlength) / winlength
+        # Apply zero-phase filtering
+        xuws =  sg.filtfilt(kernel, [1], xuw, padlen=3*(max(len(kernel), 1)-1))
+        
         xsmooth = fc.wrap(xuws)
         return xsmooth
     def round_to_sig_figs(x, sig_figs):
@@ -77,6 +114,14 @@ class utils_general():
         i = np.argmin(np.abs(df))
         
         return i
+    def find_nearest_block(search,x):
+        #x is array to query, search is array that you are finding indexes for
+        I = np.zeros(len(search),dtype=int)
+        for i,s in enumerate(search):
+            df = s-x
+            I[i] = np.argmin(np.abs(df))
+        return I
+        
     def find_nearest_euc(search,x):
         df = search-x
         df = np.sum(df**2,axis=1)
@@ -185,8 +230,30 @@ class utils_general():
         # wedc = np.mean(wednorm*np.cos(angles),axis=1)
         # pva_norm  = np.sqrt(weds**2+wedc**2)
         return pva
+    def complex_pca(X):
+        #Function does pca with complex numbers this is useful for dimensionality reduction with rotational variables
         
+        #It is essentially normal pca without any bells and whistles
         
+        #Below written by chatgpt
+        
+        # Center the complex data
+        X_centered = X - np.mean(X, axis=0)
+        
+        # Compute covariance (Hermitian)
+        cov_matrix = np.dot(X_centered.conj().T, X_centered) / (X_centered.shape[0] - 1)
+        
+        # Eigen decomposition
+        eigvals, eigvecs = np.linalg.eigh(cov_matrix)
+        
+        # Sort eigenvalues and eigenvectors
+        idx = np.argsort(eigvals)[::-1]
+        eigvals = eigvals[idx]
+        eigvecs = eigvecs[:, idx]
+        
+        # Project data onto principal components
+        X_pca = np.dot(X_centered, eigvecs)
+        return eigvals,eigvecs, X_pca
         
 #         function [blockstart, blocksize] = findblocks(data,condition,val)
 # % function takes array of ones and zeros and finds instances where there
